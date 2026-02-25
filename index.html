@@ -1,28 +1,124 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>1С-мастер: Квест по платформе</title>
+
+  <!-- Tailwind для стилей -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
-  <style>
-    body {
-      font-family: 'Inter', sans-serif;
-      background-color: #fcfcfc;
-    }
-    .one-c-yellow { background-color: #FFD200; }
-    .one-c-blue { background-color: #0ea5e9; }
-    .one-c-text-blue { color: #0ea5e9; }
-    .one-c-border-yellow { border-color: #FFD200; }
-  </style>
 </head>
-<body class="min-h-screen flex flex-col items-center justify-center">
-  <h1 class="text-3xl font-bold text-slate-800 mb-4">1С-мастер: Квест по платформе</h1>
-  <p class="text-slate-600 mb-6">Если ты видишь этот текст — GitHub Pages и стили работают.</p>
-  <button class="px-4 py-2 rounded one-c-yellow font-semibold">
-    Тестовая кнопка
-  </button>
+<body class="min-h-screen bg-slate-900 text-slate-50 flex items-center justify-center">
+  <div id="root"></div>
+
+  <script type="module">
+    import React, { useState } from "https://esm.sh/react@18.3.1";
+    import * as ReactDOMClient from "https://esm.sh/react-dom@18.3.1/client";
+
+    function App() {
+      const [step, setStep] = useState(0);
+      const [score, setScore] = useState(0);
+
+      const questions = [
+        {
+          role: "Разработчик",
+          level: 1,
+          question: "Где в конфигураторе 1С создаются новые документы?",
+          options: [
+            "Справочники → Документы",
+            "Конфигурация → Документы",
+            "Администрирование → Документы",
+            "Отчеты → Документы"
+          ],
+          correct: 1
+        },
+        {
+          role: "Бухгалтер",
+          level: 1,
+          question: "Какой документ используют для регистрации поступления товаров?",
+          options: [
+            "Реализация товаров и услуг",
+            "Поступление товаров и услуг",
+            "Авансовый отчет",
+            "Операция (бухгалтерская)"
+          ],
+          correct: 1
+        },
+        {
+          role: "Менеджер по продажам",
+          level: 1,
+          question: "Какой объект 1С используют для фиксации договоренностей с клиентом до отгрузки?",
+          options: [
+            "Заказ клиента",
+            "Счет на оплату",
+            "Платежное поручение",
+            "Поступление на расчетный счет"
+          ],
+          correct: 0
+        }
+      ];
+
+      const current = questions[step];
+
+      function handleAnswer(index) {
+        const isCorrect = index === current.correct;
+        if (isCorrect) setScore((s) => s + 1);
+
+        if (step < questions.length - 1) {
+          setStep((s) => s + 1);
+        } else {
+          alert(
+            `Квест завершён!\nПравильных ответов: ${isCorrect ? score + 1 : score} из ${questions.length}`
+          );
+        }
+      }
+
+      return (
+        <div className="max-w-xl w-full mx-4 bg-slate-800 rounded-2xl shadow-2xl border border-slate-700 p-6 md:p-8">
+          <h1 className="text-2xl md:text-3xl font-bold mb-2 text-yellow-300">
+            1С-мастер: Квест по платформе
+          </h1>
+          <p className="text-slate-300 mb-4 text-sm md:text-base">
+            Роль: <span className="font-semibold">{current.role}</span> · Уровень{" "}
+            <span className="font-semibold">{current.level}</span>
+          </p>
+
+          <div className="mb-4 text-xs text-slate-400">
+            Вопрос {step + 1} из {questions.length} · Очки:{" "}
+            <span className="font-semibold text-yellow-300">{score}</span>
+          </div>
+
+          <div className="mb-6">
+            <p className="text-lg md:text-xl font-semibold text-slate-50">
+              {current.question}
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            {current.options.map((opt, index) => (
+              <button
+                key={index}
+                onClick={() => handleAnswer(index)}
+                className="w-full text-left px-4 py-3 rounded-xl bg-slate-700 hover:bg-slate-600 transition-colors border border-slate-600"
+              >
+                <span className="font-mono mr-2 text-slate-400">
+                  {String.fromCharCode(65 + index)}.
+                </span>
+                <span>{opt}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-6 text-xs text-slate-400 text-center">
+            Нажми на вариант ответа, чтобы перейти к следующему вопросу.
+          </div>
+        </div>
+      );
+    }
+
+    const container = document.getElementById("root");
+    const root = ReactDOMClient.createRoot(container);
+    root.render(React.createElement(App));
+  </script>
 </body>
 </html>
-
