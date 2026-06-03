@@ -1,9 +1,9 @@
-
 export enum UserRole {
   DEVELOPER = 'Разработчик',
   ACCOUNTANT = 'Бухгалтер',
   SALES = 'Менеджер',
-  ADMINISTRATOR = 'Администратор 1С'
+  ADMINISTRATOR = 'Администратор 1С',
+  USER = 'Пользователь'
 }
 
 export enum UserSpecialization {
@@ -12,7 +12,24 @@ export enum UserSpecialization {
   UNF = '1С:УНФ',
   UT = '1С:Управление торговлей',
   KA = '1С:Комплексная автоматизация',
-  ERP = '1С:ERP'
+  ERP = '1С:ERP',
+  ADMIN = 'Администрирование 1С'
+}
+
+// Добавляем псевдонимы обратной совместимости через слияние пространств имен (Namespace Merging),
+// чтобы избежать дублирования значений в Object.values(UserSpecialization)
+export namespace UserSpecialization {
+  export const DEVELOPER = UserSpecialization.COMMON;
+  export const ACCOUNTANT = UserSpecialization.ACC;
+  export const MANAGER = UserSpecialization.UNF;
+  export const ADMIN_1C = UserSpecialization.ADMIN;
+}
+
+export enum SkillLevel {
+  BEGINNER = 'Начинающий',
+  INTERMEDIATE = 'Средний',
+  ADVANCED = 'Продвинутый',
+  EXPERT = 'Эксперт'
 }
 
 export enum ExerciseType {
@@ -34,6 +51,9 @@ export interface Exercise {
   xp: number;
   initialCode?: string;
   snippets?: string[]; // для drag and drop
+  kb_section_id?: string;
+  specialization?: string;
+  difficulty?: number;
 }
 
 export interface Lesson {
@@ -51,6 +71,8 @@ export interface KBItem {
   title: string;
   content: string; // Текст из NoteBookLM или других источников
   tags: string[];
+  created_at?: string;
+  source?: string;
 }
 
 export interface UserProgress {
@@ -63,5 +85,7 @@ export interface UserProgress {
   specialization: UserSpecialization;
   aiDifficulty: number;
   isAdmin: boolean;
+  avatarUrl?: string;
+  name?: string;
   lastCompletedDate?: string;
 }

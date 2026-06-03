@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Lesson, Exercise, ExerciseType } from '../types';
 import ExerciseRenderer from './ExerciseRenderer';
 import { generateAIQuestion } from '../services/geminiService';
 import { OneCLogo } from '../constants';
-import { X, Award, Loader2, Sparkles, Brain } from 'lucide-react';
+import { X, Award, Loader2, Sparkles, Brain, Home } from 'lucide-react';
+import CharacterAvatar from './CharacterAvatar';
 
 interface LessonScreenProps {
   lesson: Lesson;
@@ -123,11 +123,41 @@ const LessonScreen: React.FC<LessonScreenProps> = ({ lesson, aiDifficulty, onFin
 
   return (
     <div className="fixed inset-0 bg-white z-50 flex flex-col">
-      <div className="p-4 flex items-center space-x-4">
-        <button onClick={onExit} className="text-gray-400 hover:text-gray-600 transition-colors">
-          <X className="w-7 h-7" />
-        </button>
-        <div className="flex-grow bg-gray-100 h-3 rounded-full overflow-hidden">
+      {/* Desktop side avatar: zIndex-51 ensures visibility over z-50 LessonScreen */}
+      <div className="hidden lg:block">
+        <CharacterAvatar 
+          isVisible={!showNarrative && !isFinished} 
+          isSpeaking={false}
+          type="max"
+          position="left"
+          hasSidebar={false}
+          contentWidth="42rem"
+          zIndex={51}
+          bubbleText={currentIndex === 0 ? "Привет! Будем учиться вместе. Я помогу тебе освоить эту тему!" : (currentIndex === exercises.length - 1 ? "Последний вопрос! Поднажми!" : null)}
+        />
+      </div>
+      <div className="p-4 flex items-center justify-between border-b border-gray-100 mb-2">
+        <div className="flex items-center space-x-3">
+          <button 
+            onClick={onExit} 
+            className="p-2.5 bg-gray-50 hover:bg-sky-50 text-gray-500 hover:text-sky-600 rounded-xl transition-all cursor-pointer flex items-center space-x-1.5 font-bold text-xs uppercase" 
+            title="Выход из урока"
+          >
+            <X className="w-5 h-5" />
+            <span className="hidden sm:inline">Выйти</span>
+          </button>
+          
+          <button 
+            onClick={onExit} 
+            className="p-2.5 bg-gray-50 hover:bg-sky-50 text-gray-500 hover:text-sky-600 rounded-xl transition-all cursor-pointer flex items-center space-x-1.5 font-bold text-xs uppercase" 
+            title="На главную"
+          >
+            <Home className="w-5 h-5 text-sky-600" />
+            <span className="hidden sm:inline">Домой</span>
+          </button>
+        </div>
+        
+        <div className="flex-grow max-w-md mx-4 bg-gray-100 h-3 rounded-full overflow-hidden">
           <div 
             className="bg-[#FFD200] h-full transition-all duration-500 ease-out"
             style={{ width: `${progress}%` }}
@@ -135,7 +165,33 @@ const LessonScreen: React.FC<LessonScreenProps> = ({ lesson, aiDifficulty, onFin
         </div>
       </div>
 
-      <div className="flex-grow overflow-y-auto px-4 py-2 md:px-8 max-w-2xl mx-auto w-full">
+      <div className="flex-grow overflow-y-auto px-4 py-2 md:px-8 max-w-2xl mx-auto w-full space-y-4">
+        {/* Compact, elegant assistance banner for mobile & tablet (avoiding floating overlaps) */}
+        {!showNarrative && !isFinished && !isLoadingAI && (
+          <div className="block lg:hidden w-full bg-gradient-to-r from-sky-50 to-indigo-50 border border-sky-100 rounded-2xl p-3 shadow-xs animate-in fade-in duration-300">
+            <div className="flex items-center space-x-3.5">
+              <div className="w-11 h-11 shrink-0 rounded-xl overflow-hidden bg-white border border-sky-200">
+                <CharacterAvatar
+                  isVisible={true}
+                  isSpeaking={false}
+                  type="max"
+                  isInline={true}
+                />
+              </div>
+              <div className="flex-1">
+                <p className="text-[10px] font-black text-slate-800 leading-tight uppercase tracking-tight">
+                  {currentIndex === 0 
+                    ? "Привет! Я твой наставник Макс. Будем проходить задания вместе!" 
+                    : (currentIndex === exercises.length - 1 
+                      ? "Финальный вопрос! Поднажми, ты сможешь!" 
+                      : "Продолжаем! Отлично справляешься!")
+                  }
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {isLoadingAI ? (
           <div className="h-full flex flex-col items-center justify-center space-y-4">
              <div className="relative">

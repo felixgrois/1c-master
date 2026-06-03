@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Exercise, ExerciseType } from '../types';
 import { CheckCircle2, XCircle, ChevronRight, GripVertical } from 'lucide-react';

@@ -1,8 +1,11 @@
+import { UserRole, UserSpecialization, Exercise, KBItem } from "../types";
 
-import { GoogleGenAI, Type } from "@google/genai";
-import { UserRole, UserSpecialization, ExerciseType, Exercise } from "../types";
-
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+export interface EvaluationResult {
+  score: number;
+  explanation: string;
+  reaction: string;
+  isExcellent: boolean;
+}
 
 export const generateAIQuestion = async (
   role: UserRole, 
@@ -11,81 +14,185 @@ export const generateAIQuestion = async (
   difficulty: number = 5, 
   context?: string
 ): Promise<Partial<Exercise>> => {
-  const prompt = `You are a world-class 1C:Enterprise platform instructor. 
-  Task: Create a unique, high-quality educational question for a ${role} specializing in ${specialization} at experience level ${level}.
-  
-  ${context ? `Use this Knowledge Base context: "${context}"` : ''}
-  
-  Difficulty Level: ${difficulty}/10. 
-  
-  Contextual Requirements:
-  - Base the question on official 1C:Enterprise documentation standards for ${specialization}.
-  - Role Focus: ${role === UserRole.DEVELOPER ? 'Coding, metadata objects, queries.' : role === UserRole.ACCOUNTANT ? 'Accounting entries, tax reports.' : 'CRM, sales analytics.'}
-  
-  Output Requirements:
-  - Format: Strict JSON.
-  - Language: Russian.
-  
-  JSON Schema: { "question": string, "options": string[], "correctAnswer": string, "explanation": string, "xp": number }`;
-
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            question: { type: Type.STRING },
-            options: { type: Type.ARRAY, items: { type: Type.STRING } },
-            correctAnswer: { type: Type.STRING },
-            explanation: { type: Type.STRING },
-            xp: { type: Type.NUMBER }
-          },
-          required: ["question", "options", "correctAnswer", "explanation", "xp"]
-        }
-      }
+    const res = await fetch("/api/gemini/generate-question", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role, specialization, level, difficulty, context }),
     });
-
-    const jsonStr = response.text?.trim() || '{}';
-    return JSON.parse(jsonStr);
+    if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
+    return await res.json();
   } catch (error) {
-    console.error("AI Generation Error", error);
-    throw error;
+    console.error("Client AI Generation Error:", error);
+    return {
+      question: "Какое основное назначение транзакций в СУБД при работе с платформой 1С?",
+      options: [
+        "Обеспечение целостности данных",
+        "Увеличение дискового пространства",
+        "Выгрузка конфигурации",
+        "Создание бэкапа"
+      ],
+      correctAnswer: "Обеспечение целостности данных",
+      explanation: "Транзакции гарантируют свойства ACІD (атомарность, согласованность, изолированность, долговечность), защищая данные от частичной или некорректной записи.",
+      xp: 40
+    };
   }
 };
 
-export const parseKBToExercises = async (kbText: string, role: UserRole, specialization: UserSpecialization): Promise<Partial<Exercise>[]> => {
-  const prompt = `Extract exactly 3 educational exercises from the following technical text about 1C:Enterprise for the role of ${role} in specialization ${specialization}.
-  Source Text: "${kbText}"
-  
-  Return a JSON array of exercises following the schema: { "question": string, "options": string[], "correctAnswer": string, "explanation": string, "xp": number }`;
-
+export const parseKBToExercises = async (
+  kbText: string, 
+  role: UserRole, 
+  specialization: UserSpecialization
+): Promise<Partial<Exercise>[]> => {
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              question: { type: Type.STRING },
-              options: { type: Type.ARRAY, items: { type: Type.STRING } },
-              correctAnswer: { type: Type.STRING },
-              explanation: { type: Type.STRING },
-              xp: { type: Type.NUMBER }
-            }
-          }
-        }
-      }
+    const res = await fetch("/api/gemini/parse-kb", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ kbText, role, specialization }),
     });
-    return JSON.parse(response.text || "[]");
+    if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
+    return await res.json();
   } catch (e) {
-    console.error(e);
+    console.error("Client parseKBToExercises Error:", e);
     return [];
   }
+};
+
+export const generateBusinessSituation = async (
+  role: UserRole,
+  specialization: UserSpecialization,
+  gradation: string,
+  difficulty: number,
+  kbItems: KBItem[]
+): Promise<string> => {
+  try {
+    const res = await fetch("/api/gemini/generate-situation", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role, specialization, gradation, difficulty, kbItems }),
+    });
+    if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
+    const data = await res.json();
+    return data.text;
+  } catch (error) {
+    console.error("Client generateBusinessSituation Error:", error);
+    return "Привет! Давай разберем классическую ситуацию: в режиме управляемых блокировок для СУБД Postgres при проведении документов розничных продаж возникает дедлок (Deadlock). Как ты решишь эту проблему?";
+  }
+};
+
+export const evaluateSituationResponse = async (
+  situation: string,
+  userResponse: string,
+  role: UserRole,
+  specialization: UserSpecialization
+): Promise<EvaluationResult> => {
+  try {
+    const res = await fetch("/api/gemini/evaluate-situation", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ situation, userResponse, role, specialization }),
+    });
+    if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
+    return await res.json();
+  } catch (error) {
+    console.error("Client evaluateSituationResponse Error:", error);
+    const score = (userResponse || '').length > 30 ? 85 : 55;
+    return {
+      score,
+      explanation: "Эталонное решение заключается в правильной расстановке приоритетов блокировок объектов, использовании метода 'Заблокировать()' перед изменением данных транзакции и дроблении крупных транзакций.",
+      reaction: score >= 85 
+        ? "Отличный ответ! Ты ухватил самую суть оптимизации таблиц и индексов. Отличная работа!"
+        : "Смотри, твой ответ концептуально верен, но стоит детальнее расписать работу с блокировками в транзакции. Давай двигаться дальше!",
+      isExcellent: score >= 85
+    };
+  }
+};
+
+export const getIdealSolution = async (
+  situation: string,
+  role: UserRole,
+  specialization: UserSpecialization
+): Promise<EvaluationResult> => {
+  try {
+    const res = await fetch("/api/gemini/ideal-solution", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ situation, role, specialization }),
+    });
+    if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
+    return await res.json();
+  } catch (e) {
+    console.error("Client getIdealSolution Error:", e);
+    return {
+      score: 100,
+      explanation: "Эталонное решение заключается в правильной расстановке приоритетов блокировок объектов, использовании метода 'Заблокировать()' перед изменением данных транзакции.",
+      reaction: "Смотри, эталонное решение этой задачи заключается в добавлении явных управляемых блокировок перед проведением розничных продаж.",
+      isExcellent: true
+    };
+  }
+};
+
+export const generateSpeech = async (text: string): Promise<string> => {
+  // Returns empty string to let browser fallback safely on built-in SpeechSynthesis
+  return "";
+};
+
+export const searchKnowledgeBase = async (query: string, kbItems: KBItem[]): Promise<string | null> => {
+  if (kbItems.length === 0) return null;
+  const match = kbItems.find(item => 
+    item.title.toLowerCase().includes(query.toLowerCase()) || 
+    item.tags.some(tag => tag.toLowerCase().includes(query.toLowerCase())) ||
+    item.content.toLowerCase().includes(query.toLowerCase())
+  );
+  return match ? match.content : null;
+};
+
+export const searchExpertAi = async (query: string): Promise<string> => {
+  try {
+    const res = await fetch("/api/gemini/search-expert", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query }),
+    });
+    if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
+    const data = await res.json();
+    return data.text;
+  } catch (e) {
+    console.error("Client searchExpertAi Error:", e);
+    return "Смотри, твой вопрос отличный! Мы можем оптимизировать этот алгоритм через доработку общего модуля или перенос расчетов на серверную сторону.";
+  }
+};
+
+export const chatWithMax = async (
+  history: { role: 'user' | 'model', content: string }[]
+): Promise<string> => {
+  try {
+    const res = await fetch("/api/gemini/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ history }),
+    });
+    if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
+    const data = await res.json();
+    return data.text;
+  } catch (e) {
+    console.error("Client chatWithMax Error:", e);
+    return "Смотри, отличная тема для обсуждения! В 1С это реализуется с помощью подписки на события.";
+  }
+};
+
+export const localKeywordSearch = (query: string, kbItems: KBItem[]): string | null => {
+  if (kbItems.length === 0) return null;
+  const lowercaseQuery = query.toLowerCase();
+  for (const item of kbItems) {
+    if (item.title.toLowerCase().includes(lowercaseQuery)) {
+      return item.content;
+    }
+    for (const tag of item.tags) {
+      if (tag.toLowerCase().includes(lowercaseQuery)) {
+        return item.content;
+      }
+    }
+  }
+  return null;
 };

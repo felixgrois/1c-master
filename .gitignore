@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Data files (to prevent restarts during auto-save)
+data/
+.data/
+*.json.tmp

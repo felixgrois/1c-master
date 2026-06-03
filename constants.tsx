@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { UserRole, UserSpecialization } from './types';
-import { Code, Calculator, TrendingUp, LayoutGrid, Server, BookText, Briefcase, Store, Factory, Settings2, ShieldCheck } from 'lucide-react';
-import { INITIAL_LESSONS } from './data/lessons';
+import { Code, Calculator, TrendingUp, LayoutGrid, Server, BookText, Briefcase, Store, Factory, Settings2, ShieldCheck, Users } from 'lucide-react';
+import { INITIAL_LESSONS } from './lessons_initial_data';
 
 export { INITIAL_LESSONS };
 
@@ -36,6 +35,12 @@ export const ROLE_DATA = {
     textColor: 'text-white',
     icon: <ShieldCheck className="w-6 h-6" />,
     description: 'Установка, настройка серверов, обновление и резервное копирование.'
+  },
+  [UserRole.USER]: {
+    color: 'bg-emerald-600',
+    textColor: 'text-white',
+    icon: <Users className="w-6 h-6" />,
+    description: 'Работа в системе 1С в качестве конечного пользователя.'
   }
 };
 
@@ -46,4 +51,21 @@ export const SPECIALIZATION_DATA = {
   [UserSpecialization.UT]: { icon: <Store className="w-4 h-4" /> },
   [UserSpecialization.KA]: { icon: <Settings2 className="w-4 h-4" /> },
   [UserSpecialization.ERP]: { icon: <Factory className="w-4 h-4" /> },
+  [UserSpecialization.ADMIN]: { icon: <Server className="w-4 h-4" /> },
+};
+
+export const SPEC_LABELS: Record<string, string> = {
+  [UserSpecialization.COMMON]: 'Общая',
+  [UserSpecialization.ACC]: '1С:Бухгалтерия',
+  [UserSpecialization.UNF]: '1С:УНФ',
+  [UserSpecialization.UT]: '1С:Управление торговлей',
+  [UserSpecialization.KA]: '1С:Комплексная автоматизация',
+  [UserSpecialization.ERP]: '1С:ERP',
+  [UserSpecialization.ADMIN]: 'Администрирование 1С',
+};
+
+export const GURU_IMAGES: Record<string, string> = {
+  SUCCESS: '/max_avatar-1.png',
+  FAILURE: '/max_avatar-1.png',
+  NEUTRAL: '/max_avatar-1.png',
 };
