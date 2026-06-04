@@ -524,6 +524,7 @@ const App: React.FC = () => {
   }, [view]); // reload when view switches
 
   const lessonsLoadedRef = React.useRef(false);
+  const lastSavedLessonsJsonRef = React.useRef<string>(JSON.stringify(INITIAL_LESSONS));
 
   // Загрузка уроков из API
   useEffect(() => {
@@ -544,6 +545,7 @@ const App: React.FC = () => {
                   specialization: rule_spec
                 };
               });
+              lastSavedLessonsJsonRef.current = JSON.stringify(normalized);
               setLessons(normalized);
             }
           } else {
@@ -564,6 +566,10 @@ const App: React.FC = () => {
     if (!lessonsLoadedRef.current) {
       return;
     }
+    const currentJson = JSON.stringify(lessons);
+    if (currentJson === lastSavedLessonsJsonRef.current) {
+      return;
+    }
     const saveLessons = async () => {
       try {
         await fetch('/api/lessons', {
@@ -571,8 +577,9 @@ const App: React.FC = () => {
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify(lessons)
+          body: currentJson
         });
+        lastSavedLessonsJsonRef.current = currentJson;
       } catch (err) {
         console.error("Ошибка при авто-сохранении уроков:", err);
       }
